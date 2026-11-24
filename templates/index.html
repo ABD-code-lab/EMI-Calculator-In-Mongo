@@ -3,189 +3,123 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Loan EMI Calculator</title>
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-  />
+  <title>Loan EMI Calculator - v1.0</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
 <body class="bg-light">
-  <div class="container py-5">
-    <div class="row justify-content-center mb-4">
-      <div class="col-lg-8">
+  <nav class="navbar navbar-dark bg-dark mb-4">
+    <div class="container">
+      <span class="navbar-brand mb-0 h1">Loan EMI Calculator (Kubernetes + MongoDB)</span>
+    </div>
+  </nav>
+
+  <div class="container pb-5">
+    <div class="row g-4">
+      <!-- Form Card -->
+      <div class="col-md-5">
         <div class="card shadow-sm">
           <div class="card-header bg-primary text-white">
-            <h4 class="mb-0">Loan EMI Calculator</h4>
+            <strong>Calculate Monthly EMI</strong>
           </div>
           <div class="card-body">
             <div id="alertBox" class="alert alert-danger d-none" role="alert"></div>
-
             <form id="emiForm" novalidate>
-              <div class="row g-3">
-                <div class="col-md-4">
-                  <label for="principalInput" class="form-label">Loan Amount (P)</label>
-                  <input
-                    type="number"
-                    step="any"
-                    min="0.01"
-                    class="form-control"
-                    id="principalInput"
-                    name="P"
-                    placeholder="e.g. 500000"
-                    required
-                  />
-                </div>
-                <div class="col-md-4">
-                  <label for="rateInput" class="form-label">Annual Interest Rate (%)</label>
-                  <input
-                    type="number"
-                    step="any"
-                    min="0.01"
-                    class="form-control"
-                    id="rateInput"
-                    name="rate"
-                    placeholder="e.g. 12"
-                    required
-                  />
-                </div>
-                <div class="col-md-4">
-                  <label for="monthsInput" class="form-label">Tenure in Months (n)</label>
-                  <input
-                    type="number"
-                    step="1"
-                    min="1"
-                    class="form-control"
-                    id="monthsInput"
-                    name="n"
-                    placeholder="e.g. 24"
-                    required
-                  />
-                </div>
+              <div class="mb-3">
+                <label for="principal" class="form-label">Loan Amount (P)</label>
+                <input type="number" step="any" min="0.01" class="form-control" id="principal" placeholder="e.g. 500000" required />
               </div>
-
-              <div class="mt-4 d-flex gap-2">
-                <button type="submit" id="calcBtn" class="btn btn-primary">
-                  Calculate EMI
-                </button>
+              <div class="mb-3">
+                <label for="rate" class="form-label">Annual Interest Rate (%)</label>
+                <input type="number" step="any" min="0.01" class="form-control" id="rate" placeholder="e.g. 12" required />
               </div>
+              <div class="mb-3">
+                <label for="months" class="form-label">Tenure (Months, n)</label>
+                <input type="number" step="1" min="1" class="form-control" id="months" placeholder="e.g. 24" required />
+              </div>
+              <button type="submit" class="btn btn-primary w-100" id="calcBtn">Calculate EMI</button>
             </form>
+          </div>
+        </div>
+      </div>
 
-            <!-- Result Panel -->
-            <div id="resultPanel" class="mt-4 p-3 border rounded bg-white d-none">
-              <h5 class="mb-3">Calculation Result</h5>
-              <div class="row text-center g-3">
-                <div class="col-md-4">
-                  <div class="p-2 bg-light rounded">
-                    <small class="text-muted d-block">Monthly EMI</small>
-                    <strong id="resEmi" class="fs-5 text-success">-</strong>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="p-2 bg-light rounded">
-                    <small class="text-muted d-block">Total Interest</small>
-                    <strong id="resInterest" class="fs-5">-</strong>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="p-2 bg-light rounded">
-                    <small class="text-muted d-block">Total Payment</small>
-                    <strong id="resTotal" class="fs-5">-</strong>
-                  </div>
-                </div>
-              </div>
-              <div class="mt-3 text-muted small">
-                Served By: <span id="resServedBy">-</span>
-              </div>
-            </div>
+      <!-- Result Panel -->
+      <div class="col-md-7">
+        <div class="card shadow-sm">
+          <div class="card-header bg-success text-white">
+            <strong>Calculation Result</strong>
+          </div>
+          <div class="card-body" id="resultPanel">
+            <p class="text-muted mb-0">Enter loan details and submit to see results.</p>
           </div>
         </div>
       </div>
     </div>
 
     <!-- History Table -->
-    <div class="row justify-content-center">
-      <div class="col-lg-10">
-        <div class="card shadow-sm">
-          <div class="card-header bg-dark text-white">
-            <h5 class="mb-0">Recent Calculations (Last 10)</h5>
-          </div>
-          <div class="card-body">
-            <div class="table-responsive">
-              <table class="table table-striped table-bordered align-middle mb-0" id="historyTable">
-                <thead class="table-secondary">
-                  <tr>
-                    <th>#</th>
-                    <th>Principal (P)</th>
-                    <th>Rate (%)</th>
-                    <th>Months (n)</th>
-                    <th>EMI</th>
-                    <th>Served By</th>
-                    <th>Created At (UTC)</th>
-                  </tr>
-                </thead>
-                <tbody id="historyBody">
-                  <tr>
-                    <td colspan="7" class="text-center text-muted">Loading history...</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+    <div class="card shadow-sm mt-4">
+      <div class="card-header bg-secondary text-white">
+        <strong>Recent Calculations (Last 10)</strong>
+      </div>
+      <div class="card-body table-responsive">
+        <table class="table table-striped table-bordered align-middle mb-0" id="historyTable">
+          <thead class="table-dark">
+            <tr>
+              <th>#</th>
+              <th>Principal (P)</th>
+              <th>Rate (%)</th>
+              <th>Months (n)</th>
+              <th>Monthly EMI</th>
+              <th>Served By</th>
+              <th>Timestamp (UTC)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="7" class="text-center text-muted">Loading history...</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
 
+  <footer class="text-center text-muted py-3 border-top bg-white">
+    DS-584 Cloud Computing | EMI Web App v1.0
+  </footer>
+
   <script>
-    function showError(message) {
-      $("#alertBox").text(message).removeClass("d-none");
+    function showError(msg) {
+      $("#alertBox").text(msg).removeClass("d-none");
     }
 
-    function clearError() {
-      $("#alertBox").text("").addClass("d-none");
-    }
-
-    function escapeHtml(value) {
-      return $("<div>").text(value ?? "").html();
+    function hideError() {
+      $("#alertBox").addClass("d-none").text("");
     }
 
     function loadHistory() {
       $.ajax({
         url: "/api/history",
         method: "GET",
-        success: function (data) {
-          const rows = data.history || [];
-          const $tbody = $("#historyBody");
-          $tbody.empty();
-
-          if (rows.length === 0) {
-            $tbody.append(
-              '<tr><td colspan="7" class="text-center text-muted">No calculations yet.</td></tr>'
-            );
+        success: function (rows) {
+          const tbody = $("#historyTable tbody");
+          tbody.empty();
+          if (!rows || rows.length === 0) {
+            tbody.append('<tr><td colspan="7" class="text-center text-muted">No calculations yet.</td></tr>');
             return;
           }
-
-          rows.forEach(function (item, index) {
-            const tr = `
-              <tr>
-                <td>${index + 1}</td>
-                <td>${escapeHtml(Number(item.principal).toLocaleString())}</td>
-                <td>${escapeHtml(item.rate)}%</td>
-                <td>${escapeHtml(item.months)}</td>
-                <td><strong>${escapeHtml(Number(item.emi).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}</strong></td>
-                <td><code>${escapeHtml(item.servedBy)}</code></td>
-                <td>${escapeHtml(item.createdAt)}</td>
-              </tr>
-            `;
-            $tbody.append(tr);
+          rows.forEach(function (row, idx) {
+            const tr = $("<tr></tr>");
+            tr.append($("<td></td>").text(idx + 1));
+            tr.append($("<td></td>").text(Number(row.principal).toLocaleString()));
+            tr.append($("<td></td>").text(row.rate));
+            tr.append($("<td></td>").text(row.months));
+            tr.append($("<td></td>").text(Number(row.emi).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })));
+            tr.append($("<td></td>").text(row.servedBy || "-"));
+            tr.append($("<td></td>").text(row.createdAt ? row.createdAt.replace("T", " ").slice(0, 19) : "-"));
+            tbody.append(tr);
           });
         },
-        error: function (xhr) {
-          const msg = (xhr.responseJSON && xhr.responseJSON.error) || "Could not load history.";
-          $("#historyBody").html(
-            `<tr><td colspan="7" class="text-center text-danger">${escapeHtml(msg)}</td></tr>`
-          );
+        error: function () {
+          $("#historyTable tbody").html('<tr><td colspan="7" class="text-center text-danger">Failed to load history.</td></tr>');
         }
       });
     }
@@ -195,50 +129,51 @@
 
       $("#emiForm").on("submit", function (e) {
         e.preventDefault();
-        clearError();
+        hideError();
 
-        const pVal = parseFloat($("#principalInput").val());
-        const rateVal = parseFloat($("#rateInput").val());
-        const nVal = parseFloat($("#monthsInput").val());
+        const p = parseFloat($("#principal").val());
+        const rate = parseFloat($("#rate").val());
+        const months = parseInt($("#months").val(), 10);
 
-        if (isNaN(pVal) || pVal <= 0) {
-          showError("Please enter a positive loan amount (P > 0).");
-          return;
-        }
-        if (isNaN(rateVal) || rateVal <= 0) {
-          showError("Please enter a positive annual interest rate (> 0).");
-          return;
-        }
-        if (isNaN(nVal) || nVal <= 0 || !Number.isInteger(nVal)) {
-          showError("Please enter a positive whole number for tenure in months (n >= 1).");
+        if (isNaN(p) || p <= 0 || isNaN(rate) || rate <= 0 || isNaN(months) || months <= 0) {
+          showError("Please enter positive numbers for Principal, Interest Rate, and Months.");
           return;
         }
 
-        $("#calcBtn").prop("disabled", true);
+        $("#calcBtn").prop("disabled", true).text("Calculating...");
 
         $.ajax({
           url: "/api/emi",
           method: "POST",
           contentType: "application/json",
-          data: JSON.stringify({
-            P: pVal,
-            rate: rateVal,
-            n: parseInt(nVal, 10)
-          }),
+          data: JSON.stringify({ principal: p, rate: rate, months: months }),
           success: function (res) {
-            $("#resEmi").text(Number(res.emi).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-            $("#resInterest").text(Number(res.totalInterest).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-            $("#resTotal").text(Number(res.totalPayment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-            $("#resServedBy").text(res.servedBy);
-            $("#resultPanel").removeClass("d-none");
+            $("#resultPanel").html(`
+              <div class="row text-center">
+                <div class="col-sm-4 mb-2">
+                  <div class="text-muted small">Monthly EMI</div>
+                  <div class="fs-4 fw-bold text-success">${Number(res.emi).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                </div>
+                <div class="col-sm-4 mb-2">
+                  <div class="text-muted small">Total Interest</div>
+                  <div class="fs-5 fw-semibold">${Number(res.totalInterest).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                </div>
+                <div class="col-sm-4 mb-2">
+                  <div class="text-muted small">Total Payment</div>
+                  <div class="fs-5 fw-semibold">${Number(res.totalPayment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                </div>
+              </div>
+              <hr />
+              <div class="small text-muted">Served By: <code>${res.servedBy}</code></div>
+            `);
             loadHistory();
           },
           error: function (xhr) {
-            const msg = (xhr.responseJSON && xhr.responseJSON.error) || "Calculation failed.";
-            showError(msg);
+            const errMsg = (xhr.responseJSON && xhr.responseJSON.error) ? xhr.responseJSON.error : "Request failed.";
+            showError(errMsg);
           },
           complete: function () {
-            $("#calcBtn").prop("disabled", false);
+            $("#calcBtn").prop("disabled", false).text("Calculate EMI");
           }
         });
       });
