@@ -1,0 +1,44 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mongo-init
+  namespace: emi
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: mongo-init
+          image: mongo:7.0
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              until mongosh --host mongo-0.mongo --port 27017 --eval "db.adminCommand('ping')" >/dev/null 2>&1; do
+                echo "Waiting for mongo-0.mongo..."
+                sleep 2
+              done
+
+              mongosh --host mongo-0.mongo --port 27017 --eval '
+                try {
+                  const status = rs.status();
+                  if (status.ok === 1) {
+                    print("Replica set already initialized.");
+                    quit(0);
+                  }
+                } catch (e) {
+                  print("Initializing replica set rs0...");
+                }
+                rs.initiate({
+                  _id: "rs0",
+                  members: [
+                    { _id: 0, host: "mongo-0.mongo:27017" },
+                    { _id: 1, host: "mongo-1.mongo:27017" },
+                    { _id: 2, host: "mongo-2.mongo:27017" }
+                  ]
+                });
+              '
+              sleep 5
+              mongosh --host mongo-0.mongo --port 27017 --eval "rs.status().members.forEach(m => print(m.name + ' -> ' + m.stateStr))"

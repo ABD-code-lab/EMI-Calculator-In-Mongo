@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: emi-web
+  namespace: emi
+  labels:
+    app: emi-web
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: emi-web
+  template:
+    metadata:
+      labels:
+        app: emi-web
+    spec:
+      containers:
+        - name: emi-web
+          image: emi-web:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+          envFrom:
+            - configMapRef:
+                name: emi-config
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: emi-web
+  namespace: emi
+  labels:
+    app: emi-web
+spec:
+  type: ClusterIP
+  selector:
+    app: emi-web
+  ports:
+    - name: http
+      port: 80
+      targetPort: 5000
