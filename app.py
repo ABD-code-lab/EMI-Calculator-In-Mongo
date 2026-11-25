@@ -12,7 +12,13 @@ if not MONGO_URL:
     raise RuntimeError("MONGO_URL environment variable is required")
 
 client = MongoClient(MONGO_URL, serverSelectionTimeoutMS=2000)
-db = client.get_default_database() or client["emidb"]
+try:
+    db = client.get_default_database()
+except Exception:
+    db = None
+
+if db is None:
+    db = client["emidb"]
 calculations_col = db["calculations"]
 
 
